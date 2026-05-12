@@ -88,6 +88,13 @@
   </main>
 
   <script>
+    class CalculatorError extends Error {
+      constructor(message) {
+        super(message);
+        this.name = 'CalculatorError';
+      }
+    }
+
     let form = document.querySelector('form');
     form.addEventListener('submit', e => {
       e.preventDefault();
@@ -95,14 +102,51 @@
       let firstNum = document.querySelector('#first-num').value;
       let secondNum = document.querySelector('#second-num').value;
       let operator = document.querySelector('#operator').value;
-      output.innerHTML = eval(`${firstNum} ${operator} ${secondNum}`);
+
+      try {
+        if (firstNum.trim() === '' || secondNum.trim() === '') {
+          throw new CalculatorError('Inputs empty.');
+        }
+        if (isNaN(firstNum) || isNaN(secondNum)) {
+          throw new CalculatorError('Not a number.');
+        }
+        if (operator === '/' && Number(secondNum) === 0) {
+          throw new CalculatorError('Divide by zero.');
+        }
+        output.innerHTML = eval(`${firstNum} ${operator} ${secondNum}`);
+      } catch (error) {
+        if (error instanceof CalculatorError) {
+          output.innerHTML = `Calculator Error: ${error.message}`;
+        } else {
+          output.innerHTML = `An unexpected error occurred: ${error.message}`;
+        }
+        console.error(error);
+        // Manually send the error object to TrackJS
+        window.TrackJS && TrackJS.track(error);
+      } finally {
+        console.log('Calculation attempt finished.');
+      }
     });
+
+    window.onerror = function(message, source, lineno, colno, error) {
+      console.log('A global error was caught:', message);
+      //return true; // This prevents the error from being displayed in the console
+    };
 
     let errorBtns = Array.from(document.querySelectorAll('#error-btns > button'));
 
     // Start your code here
     // You may move this JS to another file if you wish
   </script>
+
+  <script src="https://cdn.trackjs.com/agent/v3/latest/t.js"></script>
+  <script>
+    window.TrackJS && TrackJS.install({
+      token: "eae692fe3c4742dd929441164a88d909"
+      // for more configuration options, see https://docs.trackjs.com
+    });
+  </script>
+  <script src="assets/scripts/main.js"></script>
 </body>
 
 </html>
